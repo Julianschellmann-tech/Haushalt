@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HomeFlow</title>
+<style>
+:root{--primary:#4F6F52;--on-primary:#fff;--bg:#FAFAF7;--surface:#fff;--text:#1B1B1B;--border:rgba(0,0,0,0.1);}
+[data-theme="dark"]{--primary:#A8D3AA;--on-primary:#0A2010;--bg:#121212;--surface:#1D1D1B;--text:#EDEDED;--border:rgba(255,255,255,0.12);}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);transition:background .3s,color .3s;}
+.app{display:flex;min-height:100vh;}
+.sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px 0;}
+.sidebar .brand{padding:0 20px 16px;font-size:19px;font-weight:700;cursor:pointer;border-bottom:1px solid var(--border);margin-bottom:12px;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 20px;cursor:pointer;font-size:14px;font-weight:600;opacity:.65;border-left:3px solid transparent;}
+.nav-item:hover{opacity:1;background:var(--bg);}
+.nav-item.active{opacity:1;color:var(--primary);border-left-color:var(--primary);background:var(--bg);}
+.nav-item.disabled{opacity:.3;cursor:not-allowed;}
+.sidebar-bottom{margin-top:auto;padding:12px 20px;border-top:1px solid var(--border);position:relative;}
+.profile-trigger{display:flex;align-items:center;gap:10px;cursor:pointer;}
+.profile-popover{display:none;position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15);overflow:hidden;z-index:200;width:220px;}
+.profile-popover.open{display:block;}
+.popover-item{padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;}
+.popover-item:hover{background:var(--bg);}
+.main-area{flex:1;display:flex;flex-direction:column;min-width:0;}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 24px;gap:8px;border-bottom:1px solid var(--border);background:var(--surface);}
+.icon-btn{background:none;border:none;font-size:19px;cursor:pointer;color:var(--text);padding:8px;border-radius:50%;}
+.icon-btn:hover{background:var(--border);}
+main{flex:1;padding:24px;max-width:900px;margin:0 auto;width:100%;}
+.tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.tab{padding:8px 16px;border-radius:20px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-weight:600;font-size:13px;color:var(--text);}
+.tab.active{background:var(--primary);color:var(--on-primary);border-color:var(--primary);}
+.card{background:var(--surface);border-radius:16px;padding:16px;margin-bottom:14px;border:1px solid var(--border);}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.chip{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid var(--border);margin-right:6px;background:transparent;color:var(--text);}
+.chip.filled{background:var(--primary);color:var(--on-primary);border:none;}
+.btn{background:var(--primary);color:var(--on-primary);border:none;padding:10px 20px;border-radius:20px;font-weight:600;cursor:pointer;font-size:14px;}
+.btn:hover{opacity:.9;}
+.btn-outline{background:transparent;border:1px solid var(--primary);color:var(--primary);padding:9px 18px;border-radius:20px;font-weight:600;cursor:pointer;}
+.btn-danger{background:#c0392b;color:#fff;border:none;padding:8px 14px;border-radius:16px;font-weight:600;cursor:pointer;font-size:13px;}
+.section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.section-title h2{margin:0;font-size:22px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:16px;padding:24px;max-width:440px;width:100%;max-height:85vh;overflow-y:auto;}
+.modal h3{margin-top:0;}
+input,select,textarea{width:100%;padding:10px;margin:6px 0 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit;}
+label{font-size:13px;font-weight:600;}
+.progress{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:4px 0;}
+.progress-bar{height:100%;background:var(--primary);}
+.chat-bubble{max-width:70%;padding:10px 14px;border-radius:14px;margin-bottom:6px;}
+.chat-mine{background:var(--primary);color:var(--on-primary);align-self:flex-end;}
+.chat-theirs{background:var(--surface);border:1px solid var(--border);align-self:flex-start;}
+.chat-row{display:flex;flex-direction:column;margin-bottom:10px;}
+.chat-row.mine{align-items:flex-end;}
+.chat-input-bar{padding:10px 0;display:flex;gap:8px;position:sticky;bottom:0;background:var(--bg);}
+.empty{text-align:center;color:#888;padding:40px 0;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:100;opacity:0;transition:opacity .3s;}
+.toast.show{opacity:1;}
+.member-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.member-row:last-child{border-bottom:none;}
+.member-left{display:flex;align-items:center;gap:10px;}
+.avatar-img{width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;overflow:hidden;}
+.avatar-img.big{width:72px;height:72px;font-size:26px;cursor:pointer;}
+.role-select{width:auto;padding:4px 8px;margin:0;font-size:12px;}
+.profile-avatar-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:10px;}
+.upload-hint{font-size:12px;color:#888;text-align:center;}
+.code-box{background:var(--bg);border:1px dashed var(--primary);border-radius:10px;padding:14px;text-align:center;font-size:22px;font-weight:800;letter-spacing:3px;color:var(--primary);margin-bottom:10px;user-select:all;}
+.switch{position:relative;display:inline-block;width:44px;height:24px;}
+.switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:24px;transition:.2s;}
+.slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}
+input:checked + .slider{background:var(--primary);}
+input:checked + .slider:before{transform:translateX(20px);}
+@media(max-width:700px){
+  .app{flex-direction:column;}
+  .sidebar{width:100%;flex-direction:row;overflow-x:auto;padding:8px;align-items:center;}
+  .sidebar .brand{display:none;}
+  .nav-item{border-left:none;border-bottom:3px solid transparent;white-space:nowrap;padding:10px 14px;}
+  .nav-item.active{border-left:none;border-bottom-color:var(--primary);}
+  .sidebar-bottom{margin-top:0;border-top:none;padding:10px 14px;}
+  main{padding:16px;}
+}
+</style>
+</head>
+<body data-theme="light">
+<div class="app">
+  <div class="sidebar">
+    <div class="brand" onclick="showPage('dashboard')">🏠 HomeFlow</div>
+    <div class="nav-item" data-page="dashboard" onclick="showPage('dashboard')">🏠 <span>Start</span></div>
+    <div class="nav-item" data-page="tasks" onclick="showPage('tasks')">✅ <span>Aufgaben</span></div>
+    <div class="nav-item" data-page="calendar" onclick="showPage('calendar')">📅 <span>Kalender</span></div>
+    <div class="nav-item" data-page="polls" onclick="showPage('polls')">📊 <span>Umfragen</span></div>
+    <div class="nav-item" data-page="chat" onclick="showPage('chat')">💬 <span>Chat</span></div>
+    <div class="nav-item" data-page="leaderboard" onclick="showPage('leaderboard')">🏆 <span>Rangliste</span></div>
+    <div class="nav-item" data-page="stats" onclick="showPage('stats')">📈 <span>Statistiken</span></div>
+    <div class="sidebar-bottom">
+      <div class="profile-popover" id="profilePopover">
+        <div class="popover-item" onclick="closePopoverAnd(openProfileModal)">✏️ Profil bearbeiten</div>
+        <div class="popover-item" onclick="closePopoverAnd(openSettingsModal)">⚙️ Einstellungen</div>
+        <div class="popover-item" onclick="closePopoverAnd(openAccountModal)">🔐 <span id="accountMenuLabel">Konto verwalten</span></div>
+      </div>
+      <div class="profile-trigger" onclick="toggleProfilePopover()">
+        <div class="avatar-img" id="userAvatar">?</div>
+        <span id="userNameLabel" style="font-size:13px;font-weight:600;">Profil</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-area">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div id="activeGroupLabel" style="font-weight:700;font-size:14px;"></div>
+        <span id="liveBadge" style="display:none;background:#2e7d32;color:#fff;padding:4px 10px;border-radius:12px;font-size:11px;">🟢 Live verbunden</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <div style="position:relative;">
+          <button class="icon-btn" onclick="toggleNotifications()" id="notifBtn">🔔</button>
+          <span id="notifBadge" style="display:none;position:absolute;top:2px;right:2px;background:#c0392b;color:#fff;font-size:10px;border-radius:50%;width:16px;height:16px;text-align:center;line-height:16px;"></span>
+          <div id="notifDropdown" style="display:none;position:absolute;right:0;top:44px;background:var(--surface);border:1px solid var(--border);border-radius:12px;width:320px;max-height:400px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.15);z-index:60;">
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-weight:700;display:flex;justify-content:space-between;align-items:center;">
+              <span>Benachrichtigungen</span>
+              <button class="icon-btn" style="font-size:14px;" onclick="clearNotifications()">🗑️</button>
+            </div>
+            <div id="notifList"></div>
+          </div>
+        </div>
+        <button class="icon-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+      </div>
+    </div>
+
+    <main>
+      <div id="setupNotice" class="card" style="display:none;background:#fff3cd;border:1px solid #e0c34a;color:#5c4a00;font-size:13px;line-height:1.5;">
+        ⚠️ <strong>Live-Synchronisierung noch nicht eingerichtet.</strong> Diese App läuft aktuell nur lokal in diesem Browser. Trage deine Firebase-Zugangsdaten im Code ein (Abschnitt FIREBASE_CONFIG), damit alle Familienmitglieder dieselben Daten in Echtzeit sehen.
+      </div>
+      <div id="page-dashboard">
+        <div class="card" id="welcomeCard" style="display:none;">
+          <strong>Willkommen bei HomeFlow! 👋</strong>
+          <p style="margin:8px 0 0;">Erstelle eine Gruppe oder tritt mit einem Code einer bestehenden Gruppe bei.</p>
+        </div>
+        <div class="section-title">
+          <h2>Meine Gruppen</h2>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-outline" onclick="openModal('joinModal')">🔑 Beitreten</button>
+            <button class="btn" onclick="openModal('groupModal')">+ Neue Gruppe</button>
+          </div>
+        </div>
+        <div id="groupsList"></div>
+      </div>
+
+      <div id="page-groupHome" style="display:none;">
+        <div class="section-title"><h2 id="groupHomeTitle">Gruppe</h2>
+          <button class="btn-outline" onclick="openModal('codeModal')">🔑 Code anzeigen</button>
+        </div>
+        <div class="section-title" style="margin-top:10px;"><h3 style="margin:0;font-size:16px;">Mitglieder</h3></div>
+        <div id="membersList" class="card"></div>
+      </div>
+
+      <div id="page-tasks" style="display:none;">
+        <div class="section-title"><h2>Aufgaben</h2><button class="btn" onclick="openModal('taskModal')">+ Neue Aufgabe</button></div>
+        <div class="tabs" id="taskFilters"></div>
+        <div id="tasksList"></div>
+      </div>
+
+      <div id="page-calendar" style="display:none;">
+        <div class="section-title"><h2>Kalender</h2></div>
+        <div class="card"><p>Wochenübersicht der fälligen Aufgaben:</p><div id="calendarWeek"></div></div>
+      </div>
+
+      <div id="page-polls" style="display:none;">
+        <div class="section-title"><h2>Umfragen</h2><button class="btn" onclick="openModal('pollModal')">+ Neue Umfrage</button></div>
+        <div id="pollsList"></div>
+      </div>
+
+      <div id="page-chat" style="display:none;">
+        <div class="section-title"><h2>Familienchat</h2></div>
+        <div id="chatMessages" style="display:flex;flex-direction:column;"></div>
+        <div class="chat-input-bar">
+          <input type="text" id="chatInput" placeholder="Nachricht schreiben..." onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn" onclick="sendChat()">➤</button>
+        </div>
+      </div>
+
+      <div id="page-leaderboard" style="display:none;">
+        <div class="section-title"><h2>Rangliste</h2></div>
+        <div id="leaderboardList"></div>
+      </div>
+
+      <div id="page-stats" style="display:none;">
+        <div class="section-title"><h2>Statistiken</h2></div>
+        <div class="tabs" id="statMetricTabs"></div>
+        <div class="tabs" id="statPeriodTabs"></div>
+        <div class="card" style="display:flex;flex-direction:column;align-items:center;gap:20px;">
+          <div id="pieChart" style="width:220px;height:220px;border-radius:50%;flex-shrink:0;"></div>
+          <div id="pieLegend" style="width:100%;"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="profileModal">
+  <div class="modal">
+    <h3>Mein Profil</h3>
+    <div class="profile-avatar-wrap">
+      <div class="avatar-img big" id="profileAvatarPreview" onclick="document.getElementById('avatarFileInput').click()">?</div>
+      <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" onchange="handleAvatarUpload(event)">
+      <span class="upload-hint">Klicke auf das Bild, um ein Profilbild hochzuladen</span>
+    </div>
+    <label>Dein Name</label>
+    <input id="realName" placeholder="z.B. Papa, Mama, Lisa...">
+    <div class="row" style="justify-content:flex-end;">
+      <button class="btn" onclick="saveProfile()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="accountModal">
+  <div class="modal">
+    <h3 id="accountModalTitle">Konto verwalten</h3>
+
+    <div id="accountLoggedOutView">
+      <p style="font-size:13px;color:#888;">Melde dich mit einem Konto an, damit du auf jedem Gerät (Handy, Tablet, PC) automatisch denselben HomeFlow-Zugang mit deinen Gruppen und Aufgaben siehst.</p>
+
+      <div class="tabs" style="margin-bottom:14px;">
+        <div class="tab active" id="tabRegister" onclick="setAccountTab('register')">Registrieren</div>
+        <div class="tab" id="tabLogin" onclick="setAccountTab('login')">Anmelden</div>
+      </div>
+
+      <div id="registerForm">
+        <label>Nutzername</label>
+        <input id="regUsername" placeholder="z.B. Papa2026" autocomplete="username">
+        <label>Passwort</label>
+        <input id="regPassword" type="password" placeholder="mind. 6 Zeichen" autocomplete="new-password">
+        <button class="btn" style="width:100%;" onclick="registerAccount()">Konto erstellen</button>
+      </div>
+
+      <div id="loginForm" style="display:none;">
+        <label>Nutzername</label>
+        <input id="loginUsername" placeholder="z.B. Papa2026" autocomplete="username">
+        <label>Passwort</label>
+        <input id="loginPassword" type="password" placeholder="Dein Passwort" autocomplete="current-password">
+        <button class="btn" style="width:100%;" onclick="loginAccount()">Anmelden</button>
+      </div>
+
+      <p id="accountError" style="color:#c0392b;font-size:13px;margin-top:10px;"></p>
+    </div>
+
+    <div id="accountLoggedInView" style="display:none;">
+      <p style="font-size:13px;">Du bist angemeldet als <strong id="accountLoggedInName"></strong>. Auf jedem Gerät, auf dem du dich mit diesem Nutzernamen und Passwort anmeldest, siehst du automatisch dieselben Gruppen und Aufgaben.</p>
+      <button class="btn-danger" style="width:100%;margin-top:10px;" onclick="logoutAccount()">Abmelden</button>
+    </div>
+
+    <div class="row" style="justify-content:flex-end;margin-top:10px;">
+      <button class="btn-outline" onclick="closeModal('accountModal')">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h3>Einstellungen</h3>
+    <div class="row" style="margin-bottom:14px;">
+      <div>
+        <strong>Statistiken sichtbar</strong><br>
+        <small style="color:#888;">Andere Mitglieder sehen deine XP, dein Geld und erledigte Aufgaben</small>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="statsVisibleToggle" onchange="toggleStatsVisibility(this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="row" style="justify-content:flex-end;">
+      <button class="btn" onclick="closeModal('settingsModal')">Fertig</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="groupModal">
+  <div class="modal">
+    <h3>Neue Gruppe erstellen</h3>
+    <label>Gruppenname</label>
+    <input id="groupName" placeholder="z.B. Familie Bochum">
+    <div class="row" style="justify-content:flex-end;">
+      <button class="btn-outline" onclick="closeModal('groupModal')">Abbrechen</button>
+      <button class="btn" onclick="createGroup()">Erstellen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="joinModal">
+  <div class="modal">
+    <h3>Gruppe beitreten</h3>
+    <p style="font-size:13px;color:#888;">Gib den 6-stelligen Code ein, den dir ein Familienmitglied gegeben hat.</p>
+    <label>Beitritts-Code</label>
+    <input id="joinCode" placeholder="z.B. AB3XQ9" style="text-transform:uppercase;">
+    <div class="row" style="justify-content:flex-end;">
+      <button class="btn-outline" onclick="closeModal('joinModal')">Abbrechen</button>
+      <button class="btn" onclick="joinGroup()">Beitreten</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="codeModal">
+  <div class="modal">
+    <h3>Beitritts-Code deiner Gruppe</h3>
+    <p style="font-size:13px;color:#888;">Teile diesen Code mit echten Familienmitgliedern, damit sie beitreten können.</p>
+    <div class="code-box" id="codeDisplay">------</div>
+    <div class="row" style="justify-content:flex-end;">
+      <button class="btn" onclick="closeModal('codeModal')">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <h3>Neue Aufgabe</h3>
+    <label>Titel</label>
+    <input id="taskTitle" placeholder="z.B. Müll rausbringen">
+    <label>Zuständig</label>
+    <select id="taskAssignee"><option value="">Egal (jeder kann übernehmen)</option></select>
+    <label>Kategorie</label>
+    <select id="taskCategory">
+      <option>Haushalt</option><option>Küche</option><option>Garten</option><option>Einkauf</option><option>Sonstiges</option>
+    </select>
+    <label>Priorität</label>
+    <select id="taskPriority">
+      <option value="low">Niedrig</option><option value="medium" selected>Mittel</option><option value="high">Hoch</option><option value="urgent">Dringend</option>
+    </select>
+    <label>Wiederholung</label>
+    <select id="taskRecurrence">
+      <option value="none">Keine</option><option value="daily">Täglich</option><option value="weekly">Wöchentlich</option><option value="monthly">Monatlich</option>
+    </select>
+    <label>Fälligkeitsdatum</label>
+    <input type="date" id="taskDue">
+    <label>Verdienst in Euro (optional)</label>
+    <input type="number" id="taskAmount" min="0" step="0.5" placeholder="z.B. 2.50">
+    <div class="row" style="justify-content:flex-end;">
+      <button class="btn-outline" onclick="closeModal('taskModal')">Abbrechen</button>
+      <button class="btn" onclick="createTask()">Erstellen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="pollModal">
+  <div class="modal">
+    <h3>Neue Umfrage</h3>
+    <label>Frage</label>
+    <input id="pollQuestion" placeholder="z.B. Wer kocht am Sonntag?">
+    <label>Option 1</label><input id="pollOpt1">
+    <label>Option 2</label><input id="pollOpt2">
+    <label>Option 3 (optional)</label><input id="pollOpt3">
+    <div class="row" style="justify-content:flex-end;">
+      <button class="btn-outline" onclick="closeModal('pollModal')">Abbrechen</button>
+      <button class="btn" onclick="createPoll()">Erstellen</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getAuth, signInAnonymously, onAuthStateChanged,
+    createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import {
+    getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
+    onSnapshot, query, orderBy, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ===========================================================
+  // HIER DEINE ECHTEN FIREBASE-ZUGANGSDATEN EINTRAGEN
+  // Anleitung: siehe docs/SETUP.md im Projektordner
+  // ===========================================================
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyAGrAm9YW7uZCfkpLN_z_-0rKM2joicI0k",
+    authDomain: "haushalt-fe2d6.firebaseapp.com",
+    projectId: "haushalt-fe2d6",
+    storageBucket: "haushalt-fe2d6.firebasestorage.app",
+    messagingSenderId: "507550363300",
+    appId: "1:507550363300:web:31a7a097c89d2c37f28031"
+  };
+
+  const isConfigured = FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.includes("TRAGE_HIER");
+  window.__HOMEFLOW_LIVE__ = isConfigured;
+
+  if (!isConfigured) {
+    window.addEventListener('DOMContentLoaded', () => {
+      const el = document.getElementById('setupNotice');
+      if (el) el.style.display = 'block';
+    });
+  } else {
+    const app = initializeApp(FIREBASE_CONFIG);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    window.__db = db;
+    window.__auth = auth;
+    window.__fs = { collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc: null };
+    window.__authFns = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, signInAnonymously };
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const badge = document.getElementById('liveBadge');
+        if (badge) badge.style.display = 'inline-block';
+        window.__currentUser = user;
+        window.dispatchEvent(new Event('homeflow-live-ready'));
+        if (!user.isAnonymous) {
+          window.dispatchEvent(new CustomEvent('homeflow-account-ready', { detail: { user } }));
+        }
+      }
+    });
+
+    if (!auth.currentUser) {
+      signInAnonymously(auth).catch((err) => console.error("Anmeldung fehlgeschlagen:", err));
+    }
+  }
+</script>
+<script>
+const STORAGE_KEY = "homeflow_data_v4";
+const PROFILE_KEY = "homeflow_profile_v4";
+
+let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+  groups: [], members: [], tasks: [], polls: [], chat: [], notifications: [],
+  activeGroupId: null, filter: "all", theme: "light", statMetric: "amount", statPeriod: "week"
+};
+if(!state.notifications) state.notifications = [];
+if(!state.statMetric) state.statMetric = "amount";
+if(!state.statPeriod) state.statPeriod = "week";
+if(state.activeGroupId === undefined) state.activeGroupId = null;
+
+let profile = JSON.parse(localStorage.getItem(PROFILE_KEY)) || { name: "", avatar: "" };
+
+let LIVE = false;
+let suppressPush = false;
+
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  pushStateToCloud();
+}
+
+function pushStateToCloud(){
+  if(!LIVE || suppressPush) return;
+  const { doc, setDoc } = window.__fs;
+  setDoc(doc(window.__db, "homeflow", "shared-state"), state).catch(err=>console.error(err));
+}
+
+function initLiveSync(){
+  LIVE = true;
+  const { doc, onSnapshot } = window.__fs;
+  onSnapshot(doc(window.__db, "homeflow", "shared-state"), (snap) => {
+    if(snap.exists()){
+      suppressPush = true;
+      const cloudState = snap.data();
+      Object.assign(state, cloudState);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      render();
+      suppressPush = false;
+    } else {
+      pushStateToCloud();
+    }
+  });
+}
+window.addEventListener('homeflow-live-ready', initLiveSync);
+function saveProfileStorage(){ localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function genCode(){
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for(let i=0;i<6;i++) code += chars[Math.floor(Math.random()*chars.length)];
+  return code;
+}
+
+function renderAvatarInto(el, memberLike){
+  if(memberLike && memberLike.avatar){
+    el.innerHTML = `<img src="${memberLike.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  } else {
+    el.textContent = (memberLike && memberLike.name) ? memberLike.name[0].toUpperCase() : "?";
+  }
+}
+
+function updateAvatarDisplays(){
+  renderAvatarInto(document.getElementById('userAvatar'), profile);
+  renderAvatarInto(document.getElementById('profileAvatarPreview'), profile);
+  document.getElementById('userNameLabel').textContent = profile.name || "Profil";
+}
+
+function toggleProfilePopover(){
+  const pop = document.getElementById('profilePopover');
+  const trigger = document.querySelector('.profile-trigger');
+  const isOpening = !pop.classList.contains('open');
+  if(isOpening){
+    const rect = trigger.getBoundingClientRect();
+    const popWidth = 220;
+    let left = rect.left;
+    let top = rect.top - 8;
+    if(window.innerWidth <= 700){
+      left = Math.min(Math.max(8, rect.left), window.innerWidth - popWidth - 8);
+      top = rect.bottom + 8;
+      pop.style.transform = 'none';
+    } else {
+      left = Math.min(Math.max(8, rect.left), window.innerWidth - popWidth - 8);
+      pop.style.transform = 'translateY(-100%)';
+    }
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+  }
+  pop.classList.toggle('open', isOpening);
+}
+function closePopoverAnd(fn){
+  document.getElementById('profilePopover').classList.remove('open');
+  fn();
+}
+
+const ACCOUNT_DOMAIN = "@homeflow.local";
+let currentAccountUsername = localStorage.getItem("homeflow_account_username") || null;
+
+function usernameToEmail(u){ return u.trim().toLowerCase().replace(/\s+/g,'_') + ACCOUNT_DOMAIN; }
+
+function setAccountTab(tab){
+  document.getElementById('tabRegister').classList.toggle('active', tab==='register');
+  document.getElementById('tabLogin').classList.toggle('active', tab==='login');
+  document.getElementById('registerForm').style.display = tab==='register' ? 'block' : 'none';
+  document.getElementById('loginForm').style.display = tab==='login' ? 'block' : 'none';
+  document.getElementById('accountError').textContent = '';
+}
+
+function openAccountModal(){
+  const loggedIn = !!currentAccountUsername;
+  document.getElementById('accountLoggedOutView').style.display = loggedIn ? 'none' : 'block';
+  document.getElementById('accountLoggedInView').style.display = loggedIn ? 'block' : 'none';
+  if(loggedIn) document.getElementById('accountLoggedInName').textContent = currentAccountUsername;
+  document.getElementById('accountError').textContent = '';
+  openModal('accountModal');
+}
+
+function showAccountError(msg){
+  document.getElementById('accountError').textContent = msg;
+}
+
+function friendlyAuthError(err){
+  const code = err && err.code || '';
+  if(code.includes('email-already-in-use')) return 'Dieser Nutzername ist bereits vergeben';
+  if(code.includes('weak-password')) return 'Passwort muss mind. 6 Zeichen haben';
+  if(code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found')) return 'Nutzername oder Passwort falsch';
+  if(code.includes('invalid-email')) return 'Ungültiger Nutzername (nur Buchstaben/Zahlen verwenden)';
+  if(code.includes('operation-not-allowed')) return '⚠️ E-Mail/Passwort-Anmeldung ist in Firebase noch nicht aktiviert (Authentication → Sign-in method → Email/Password aktivieren)';
+  if(code.includes('network-request-failed')) return 'Keine Internetverbindung oder Firebase nicht erreichbar';
+  if(code.includes('too-many-requests')) return 'Zu viele Versuche. Bitte kurz warten und erneut versuchen';
+  if(code.includes('auth/configuration-not-found') || code.includes('permission-denied')) return '⚠️ Firebase-Konfiguration/Regeln prüfen';
+  return `Fehler: ${code || (err && err.message) || 'Unbekannt'}. Bitte Firebase-Einstellungen prüfen.`;
+}
+
+async function registerAccount(){
+  if(!window.__authFns){ showAccountError('Live-Verbindung noch nicht bereit'); return; }
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value;
+  if(!username || password.length < 6){ showAccountError('Nutzername eingeben & Passwort mind. 6 Zeichen'); return; }
+  try{
+    const { createUserWithEmailAndPassword, updateProfile } = window.__authFns;
+    const cred = await createUserWithEmailAndPassword(window.__auth, usernameToEmail(username), password);
+    await updateProfile(cred.user, { displayName: username });
+    finishAccountLogin(username);
+  } catch(err){
+    console.error(err);
+    showAccountError(friendlyAuthError(err));
+  }
+}
+
+async function loginAccount(){
+  if(!window.__authFns){ showAccountError('Live-Verbindung noch nicht bereit'); return; }
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if(!username || !password){ showAccountError('Bitte Nutzername und Passwort eingeben'); return; }
+  try{
+    const { signInWithEmailAndPassword } = window.__authFns;
+    await signInWithEmailAndPassword(window.__auth, usernameToEmail(username), password);
+    finishAccountLogin(username);
+  } catch(err){
+    console.error(err);
+    showAccountError(friendlyAuthError(err));
+  }
+}
+
+function finishAccountLogin(username){
+  currentAccountUsername = username;
+  localStorage.setItem("homeflow_account_username", username);
+  if(!profile.name){
+    profile.name = username;
+    saveProfileStorage();
+    updateAvatarDisplays();
+  }
+  document.getElementById('accountMenuLabel').textContent = `Konto: ${username}`;
+  closeModal('accountModal');
+  toast(`Angemeldet als ${username} – deine Daten sind jetzt auf allen Geräten verfügbar`);
+  render();
+}
+
+async function logoutAccount(){
+  if(!window.__authFns){ return; }
+  try{
+    await window.__authFns.signOut(window.__auth);
+    currentAccountUsername = null;
+    localStorage.removeItem("homeflow_account_username");
+    document.getElementById('accountMenuLabel').textContent = 'Konto verwalten';
+    closeModal('accountModal');
+    toast('Abgemeldet');
+    await window.__authFns.signInAnonymously(window.__auth);
+  } catch(err){
+    console.error(err);
+  }
+}
+
+window.addEventListener('homeflow-live-ready', () => {
+  if(currentAccountUsername){
+    const el = document.getElementById('accountMenuLabel');
+    if(el) el.textContent = `Konto: ${currentAccountUsername}`;
+  }
+});
+
+function openProfileModal(){
+  document.getElementById('realName').value = profile.name;
+  renderAvatarInto(document.getElementById('profileAvatarPreview'), profile);
+  openModal('profileModal');
+}
+
+function openSettingsModal(){
+  const m = getMyMember();
+  document.getElementById('statsVisibleToggle').checked = m ? m.statsVisible !== false : true;
+  openModal('settingsModal');
+}
+
+function toggleStatsVisibility(checked){
+  const m = getMyMember();
+  if(m){ m.statsVisible = checked; save(); render(); }
+  toast(checked ? "Deine Statistiken sind jetzt sichtbar" : "Deine Statistiken sind jetzt privat");
+}
+
+function handleAvatarUpload(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  if(file.size > 2 * 1024 * 1024){ toast("Bild darf max. 2 MB groß sein"); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    profile.avatar = e.target.result;
+    renderAvatarInto(document.getElementById('profileAvatarPreview'), profile);
+  };
+  reader.readAsDataURL(file);
+}
+
+function getMyMember(){
+  return state.members.find(m=>m.name === profile.name);
+}
+
+function ensureMyMember(){
+  let m = getMyMember();
+  if(!m){
+    m = {id:'m'+Date.now(), name:profile.name, avatar:profile.avatar, xp:0, tasksDone:0, statsVisible:true, groups:[]};
+    state.members.push(m);
+  }
+  m.avatar = profile.avatar;
+  return m;
+}
+
+function saveProfile(){
+  const newName = document.getElementById('realName').value.trim();
+  if(!newName){ toast("Bitte einen Namen eingeben"); return; }
+  const oldName = profile.name;
+
+  if(oldName && oldName !== newName){
+    const member = state.members.find(m=>m.name===oldName);
+    if(member) member.name = newName;
+    state.tasks.forEach(t=>{
+      if(t.assignee===oldName) t.assignee = newName;
+      if(t.createdBy===oldName) t.createdBy = newName;
+      if(t.claimedBy===oldName) t.claimedBy = newName;
+      if(t.pendingBy===oldName) t.pendingBy = newName;
+      (t.completionLog||[]).forEach(l=>{ if(l.by===oldName) l.by = newName; });
+    });
+    state.polls.forEach(p=>{
+      if(p.createdBy===oldName) p.createdBy = newName;
+      p.options.forEach(o=>{ o.voters = o.voters.map(v=> v===oldName ? newName : v); });
+    });
+    state.chat.forEach(m=>{ if(m.sender===oldName) m.sender = newName; });
+    state.groups.forEach(g=>{ if(g.createdBy===oldName) g.createdBy = newName; });
+    state.notifications.forEach(n=>{ if(n.to===oldName) n.to = newName; });
+  }
+
+  profile.name = newName;
+  ensureMyMember();
+
+  saveProfileStorage(); save();
+  updateAvatarDisplays();
+  closeModal('profileModal');
+  render();
+  toast(`Profil gespeichert: ${newName}`);
+}
+
+function showPage(page){
+  if(page !== 'dashboard' && !state.activeGroupId){
+    toast("Bitte wähle zuerst eine Gruppe auf der Startseite");
+    page = 'dashboard';
+  }
+  const pages = ['dashboard','groupHome','tasks','calendar','polls','chat','leaderboard','stats'];
+  pages.forEach(p=>{
+    const el = document.getElementById('page-'+p);
+    if(el) el.style.display = (p===page)?'block':'none';
+  });
+  document.querySelectorAll('.nav-item').forEach(b=>{
+    b.classList.toggle('active', b.dataset.page===page || (page==='groupHome' && b.dataset.page==='dashboard'));
+  });
+  render();
+}
+
+function toggleTheme(){
+  const body = document.body;
+  const newTheme = body.dataset.theme === 'light' ? 'dark' : 'light';
+  body.dataset.theme = newTheme;
+  state.theme = newTheme;
+  document.getElementById('themeBtn').textContent = newTheme==='dark' ? '☀️' : '🌙';
+  save();
+}
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function requireName(){
+  if(!profile.name){ toast("Bitte zuerst dein Profil unten links ausfüllen"); openProfileModal(); return false; }
+  return true;
+}
+
+function activeGroup(){
+  return state.groups.find(g=>g.id === state.activeGroupId);
+}
+function isGroupMember(g, name){
+  return g && g.members && g.members.includes(name);
+}
+function canManageGroup(g){
+  return g && g.createdBy === profile.name;
+}
+
+function createGroup(){
+  if(!requireName()) return;
+  const name = document.getElementById('groupName').value.trim();
+  if(!name){ toast("Bitte einen Gruppennamen eingeben"); return; }
+  ensureMyMember();
+  const g = { id:'g'+Date.now(), name, createdBy: profile.name, code: genCode(), members:[profile.name] };
+  state.groups.push(g);
+  const me = getMyMember(); if(!me.groups) me.groups=[]; me.groups.push(g.id);
+  save(); closeModal('groupModal');
+  document.getElementById('groupName').value='';
+  openGroup(g.id);
+  toast("Gruppe erstellt! Teile den Code mit deiner Familie.");
+}
+
+function joinGroup(){
+  if(!requireName()) return;
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  const g = state.groups.find(x=>x.code === code);
+  if(!g){ toast("Kein Gruppe mit diesem Code gefunden"); return; }
+  ensureMyMember();
+  if(!g.members.includes(profile.name)){
+    g.members.push(profile.name);
+    const me = getMyMember(); if(!me.groups) me.groups=[]; if(!me.groups.includes(g.id)) me.groups.push(g.id);
+    notify(g.createdBy, `${profile.name} ist der Gruppe "${g.name}" beigetreten.`);
+  }
+  save(); closeModal('joinModal');
+  document.getElementById('joinCode').value='';
+  openGroup(g.id);
+  toast(`Du bist "${g.name}" beigetreten!`);
+}
+
+function openGroup(id){
+  state.activeGroupId = id;
+  save();
+  showPage('groupHome');
+}
+
+function backToDashboard(){
+  state.activeGroupId = null;
+  save();
+  showPage('dashboard');
+}
+
+function deleteGroup(id){
+  if(!confirm("Diese Gruppe wirklich löschen? Alle Aufgaben, Umfragen und Chats dieser Gruppe gehen verloren.")) return;
+  state.groups = state.groups.filter(g=>g.id!==id);
+  state.tasks = state.tasks.filter(t=>t.groupId!==id);
+  state.polls = state.polls.filter(p=>p.groupId!==id);
+  state.chat = state.chat.filter(c=>c.groupId!==id);
+  if(state.activeGroupId === id) state.activeGroupId = null;
+  save(); showPage('dashboard');
+  toast("Gruppe gelöscht");
+}
+
+function removeMemberFromGroup(name){
+  const g = activeGroup();
+  if(!g) return;
+  if(name === g.createdBy){ toast("Der Ersteller kann nicht entfernt werden"); return; }
+  if(!confirm(`${name} wirklich aus der Gruppe entfernen?`)) return;
+  g.members = g.members.filter(m=>m!==name);
+  save(); render();
+}
+
+function notify(toName, text){
+  if(!toName) return;
+  state.notifications.push({
+    id:'n'+Date.now()+Math.random().toString(36).slice(2,6),
+    to: toName, text, read:false, date: new Date().toISOString()
+  });
+  save();
+  renderNotifications();
+}
+function myNotifications(){
+  return state.notifications.filter(n=>n.to===profile.name).sort((a,b)=> new Date(b.date)-new Date(a.date));
+}
+function toggleNotifications(){
+  const dd = document.getElementById('notifDropdown');
+  const opening = dd.style.display !== 'block';
+  dd.style.display = opening ? 'block' : 'none';
+  if(opening){ myNotifications().forEach(n=>n.read=true); save(); renderNotifications(); }
+}
+function clearNotifications(){
+  state.notifications = state.notifications.filter(n=>n.to!==profile.name);
+  save(); renderNotifications();
+}
+function renderNotifications(){
+  const list = document.getElementById('notifList');
+  const badge = document.getElementById('notifBadge');
+  if(!list || !badge) return;
+  const mine = myNotifications();
+  const unread = mine.filter(n=>!n.read).length;
+  badge.style.display = unread > 0 ? 'block' : 'none';
+  badge.textContent = unread > 9 ? '9+' : unread;
+  list.innerHTML = mine.length ? mine.map(n=>`
+    <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;${n.read?'opacity:.6;':'font-weight:600;'}">
+      ${n.text}<br><small style="opacity:.6;">${new Date(n.date).toLocaleString('de-DE')}</small>
+    </div>`).join('') : '<div class="empty" style="padding:20px;">Keine Benachrichtigungen</div>';
+}
+
+function createTask(){
+  if(!requireName()) return;
+  const g = activeGroup();
+  if(!g){ toast("Bitte wähle zuerst eine Gruppe"); return; }
+  const title = document.getElementById('taskTitle').value.trim();
+  if(!title){ toast("Bitte einen Titel eingeben"); return; }
+  const priority = document.getElementById('taskPriority').value;
+  const xpMap = {low:5,medium:10,high:20,urgent:35};
+  const amountVal = parseFloat(document.getElementById('taskAmount').value);
+  const assigneeVal = document.getElementById('taskAssignee').value;
+  state.tasks.push({
+    id:'t'+Date.now(), groupId: g.id, title,
+    assignee: assigneeVal, claimedBy: assigneeVal || null,
+    category: document.getElementById('taskCategory').value,
+    priority, status:'open',
+    dueDate: document.getElementById('taskDue').value || new Date().toISOString().slice(0,10),
+    recurrence: document.getElementById('taskRecurrence').value,
+    xp: xpMap[priority], amount: isNaN(amountVal) ? 0 : amountVal,
+    completionLog: [], createdBy: profile.name
+  });
+  save(); closeModal('taskModal');
+  document.getElementById('taskTitle').value=''; document.getElementById('taskAmount').value='';
+  render(); toast("Aufgabe erstellt!");
+}
+
+function claimTask(taskId){
+  if(!requireName()) return;
+  const task = state.tasks.find(t=>t.id===taskId);
+  if(task.claimedBy){ toast(`Diese Aufgabe wurde bereits von ${task.claimedBy} übernommen`); return; }
+  task.claimedBy = profile.name;
+  save(); render();
+  notify(task.createdBy, `${profile.name} hat die Aufgabe "${task.title}" übernommen.`);
+  toast(`Du hast "${task.title}" übernommen`);
+}
+
+function toggleTaskStatus(taskId){
+  if(!requireName()) return;
+  const task = state.tasks.find(t=>t.id===taskId);
+  if(!task.claimedBy){ toast("Bitte übernimm die Aufgabe zuerst über den Button 'Übernehmen'"); return; }
+  if(task.claimedBy !== profile.name){ toast(`Diese Aufgabe wurde bereits von ${task.claimedBy} übernommen`); return; }
+
+  if(task.status === 'open'){
+    task.status = 'in_progress'; save(); render();
+    toast("Status aktualisiert"); return;
+  }
+  if(task.status === 'in_progress'){
+    task.status = 'done'; task.pendingBy = profile.name;
+    save(); render();
+    notify(task.createdBy, `${profile.name} hat "${task.title}" erledigt und wartet auf deine Verifizierung${task.amount ? ' und Bezahlung von '+task.amount.toFixed(2)+' €' : ''}.`);
+    toast(`Als erledigt markiert – wartet auf Verifizierung durch ${task.createdBy}`); return;
+  }
+  if(task.status === 'done'){
+    toast(`Diese Aufgabe wartet noch auf Verifizierung durch ${task.createdBy}`); return;
+  }
+  if(task.status === 'verified'){
+    task.status = 'open'; task.pendingBy = null; task.claimedBy = null;
+    save(); render();
+    toast("Aufgabe erneut geöffnet"); return;
+  }
+}
+
+function verifyTask(taskId){
+  if(!requireName()) return;
+  const task = state.tasks.find(t=>t.id===taskId);
+  if(task.createdBy !== profile.name){ toast(`Nur ${task.createdBy} (Ersteller) kann diese Aufgabe verifizieren`); return; }
+  if(task.status !== 'done'){ toast("Diese Aufgabe ist noch nicht als erledigt markiert"); return; }
+  const doer = task.pendingBy || task.claimedBy || task.assignee || profile.name;
+  const member = state.members.find(m=>m.name===doer);
+  if(member){ member.xp += task.xp; member.tasksDone = (member.tasksDone||0) + 1; }
+  if(!task.completionLog) task.completionLog = [];
+  task.completionLog.push({ by: doer, date: new Date().toISOString().slice(0,10), amount: task.amount || 0, xp: task.xp });
+  task.status = 'verified'; task.pendingBy = null;
+  const count = task.completionLog.length;
+  save(); render();
+  notify(doer, `${task.createdBy} hat "${task.title}" verifiziert. Du hast +${task.xp} XP${task.amount ? ' und '+task.amount.toFixed(2)+' € erhalten' : ' erhalten'}!`);
+  toast(`✅ Verifiziert! ${doer} erhält +${task.xp} XP${task.amount ? ' & '+task.amount.toFixed(2)+' €' : ''} (${count}x gesamt)`);
+}
+
+function rejectTask(taskId){
+  if(!requireName()) return;
+  const task = state.tasks.find(t=>t.id===taskId);
+  if(task.createdBy !== profile.name){ toast(`Nur ${task.createdBy} (Ersteller) kann diese Aufgabe ablehnen`); return; }
+  const doer = task.pendingBy || task.claimedBy;
+  task.status = 'in_progress'; task.pendingBy = null;
+  save(); render();
+  if(doer) notify(doer, `${task.createdBy} hat deine Erledigung von "${task.title}" zurückgewiesen – bitte nochmal machen.`);
+  toast("Aufgabe wurde zurückgewiesen – bitte erneut erledigen");
+}
+
+function deleteTask(taskId){
+  state.tasks = state.tasks.filter(t=>t.id!==taskId);
+  save(); render();
+}
+
+function setFilter(f){ state.filter = f; save(); render(); }
+
+function createPoll(){
+  if(!requireName()) return;
+  const g = activeGroup(); if(!g){ toast("Bitte wähle zuerst eine Gruppe"); return; }
+  const q = document.getElementById('pollQuestion').value.trim();
+  const o1 = document.getElementById('pollOpt1').value.trim();
+  const o2 = document.getElementById('pollOpt2').value.trim();
+  const o3 = document.getElementById('pollOpt3').value.trim();
+  if(!q || !o1 || !o2){ toast("Frage und mind. 2 Optionen erforderlich"); return; }
+  const options = [{text:o1,voters:[]},{text:o2,voters:[]}];
+  if(o3) options.push({text:o3,voters:[]});
+  state.polls.push({id:'p'+Date.now(), groupId: g.id, question:q, options, createdBy: profile.name});
+  save(); closeModal('pollModal');
+  document.getElementById('pollQuestion').value=''; document.getElementById('pollOpt1').value='';
+  document.getElementById('pollOpt2').value=''; document.getElementById('pollOpt3').value='';
+  render(); toast("Umfrage erstellt!");
+}
+
+function vote(pollId, optIdx){
+  if(!requireName()) return;
+  const poll = state.polls.find(p=>p.id===pollId);
+  poll.options.forEach((o)=>{ o.voters = o.voters.filter(v=>v!==profile.name); });
+  poll.options[optIdx].voters.push(profile.name);
+  save(); render();
+}
+
+function sendChat(){
+  if(!requireName()) return;
+  const g = activeGroup(); if(!g){ toast("Bitte wähle zuerst eine Gruppe"); return; }
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  state.chat.push({id:'c'+Date.now(), groupId: g.id, sender: profile.name, text});
+  input.value=''; save(); render();
+}
+
+const STATUS_LABELS = {open:"Offen", in_progress:"In Arbeit", done:"Erledigt", verified:"Verifiziert"};
+const PRIORITY_COLORS = {low:"", medium:"", high:"", urgent:"filled"};
+const PRIORITY_LABELS = {low:"Niedrig", medium:"Mittel", high:"Hoch", urgent:"Dringend"};
+const METRIC_LABELS = { amount: "💶 Verdienst", count: "🔁 Anzahl", xp: "⭐ XP" };
+const PERIOD_LABELS = { week: "Diese Woche", month: "Dieser Monat", all: "Gesamt" };
+const PIE_COLORS = ["#4F6F52","#A8D3AA","#5C6B73","#e67e22","#c0392b","#2980b9","#8e44ad","#16a085","#f39c12","#7f8c8d"];
+
+function memberAvatarHtml(m){
+  if(m.avatar) return `<img src="${m.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  return m.name ? m.name[0].toUpperCase() : "?";
+}
+
+function isInPeriod(dateStr, period){
+  const d = new Date(dateStr); const now = new Date();
+  if(period === "all") return true;
+  if(period === "week"){ const s = new Date(now); s.setDate(now.getDate()-now.getDay()+1); s.setHours(0,0,0,0); return d>=s; }
+  if(period === "month"){ return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth(); }
+  return true;
+}
+function computeStatsData(){
+  const byTask = {};
+  const g = activeGroup(); if(!g) return byTask;
+  state.tasks.filter(t=>t.groupId===g.id).forEach(t=>{
+    (t.completionLog||[]).forEach(entry=>{
+      if(!isInPeriod(entry.date, state.statPeriod)) return;
+      if(!byTask[t.title]) byTask[t.title] = {amount:0,count:0,xp:0};
+      byTask[t.title].amount += entry.amount || 0;
+      byTask[t.title].count += 1;
+      byTask[t.title].xp += entry.xp || 0;
+    });
+  });
+  return byTask;
+}
+function setStatMetric(m){ state.statMetric = m; save(); render(); }
+function setStatPeriod(p){ state.statPeriod = p; save(); render(); }
+
+function render(){
+  renderNotifications();
+  const g = activeGroup();
+  const glabel = document.getElementById('activeGroupLabel');
+  if(glabel) glabel.innerHTML = g ? `📁 ${g.name} <button class="icon-btn" style="font-size:13px;" onclick="backToDashboard()">↩️ Wechseln</button>` : '';
+
+  document.getElementById('welcomeCard').style.display = (state.groups.length===0) ? 'block' : 'none';
+
+  const gList = document.getElementById('groupsList');
+  if(gList){
+    const myGroups = state.groups.filter(gr=>gr.members.includes(profile.name));
+    gList.innerHTML = myGroups.map(gr=>`
+      <div class="card row">
+        <div><strong>${gr.name}</strong><br><small>Erstellt von ${gr.createdBy} · ${gr.members.length} Mitglieder</small></div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn" onclick="openGroup('${gr.id}')">Öffnen</button>
+          ${gr.createdBy===profile.name ? `<button class="btn-danger" onclick="deleteGroup('${gr.id}')">Löschen</button>` : ''}
+        </div>
+      </div>`
+    ).join('') || '<div class="empty">Noch keine Gruppen – erstelle eine oder tritt per Code bei</div>';
+  }
+
+  if(g){
+    document.getElementById('groupHomeTitle').textContent = g.name;
+    document.getElementById('codeDisplay').textContent = g.code;
+    const groupMembers = state.members.filter(m => g.members.includes(m.name));
+    const mList = document.getElementById('membersList');
+    if(mList){
+      mList.innerHTML = groupMembers.length ? groupMembers.map(m=>`
+        <div class="member-row">
+          <div class="member-left">
+            <div class="avatar-img">${memberAvatarHtml(m)}</div>
+            <span>${m.name} ${m.name===g.createdBy ? '<span class="chip filled">Ersteller</span>' : ''}</span>
+          </div>
+          ${canManageGroup(g) && m.name!==g.createdBy ? `<button class="icon-btn" onclick="removeMemberFromGroup('${m.name}')">🗑️</button>` : ''}
+        </div>`).join('') : '<div class="empty">Noch keine Mitglieder</div>';
+    }
+  }
+
+  const assigneeSelect = document.getElementById('taskAssignee');
+  if(assigneeSelect && g){
+    const groupMembers = state.members.filter(m => g.members.includes(m.name));
+    assigneeSelect.innerHTML = '<option value="">Egal (jeder kann übernehmen)</option>' +
+      groupMembers.map(m=>`<option value="${m.name}">${m.name}</option>`).join('');
+  }
+
+  const filters = ['all','open','in_progress','done','verified'];
+  const tf = document.getElementById('taskFilters');
+  if(tf) tf.innerHTML = filters.map(f=>`<div class="tab ${state.filter===f?'active':''}" onclick="setFilter('${f}')">${f==='all'?'Alle':STATUS_LABELS[f]}</div>`).join('');
+
+  const tList = document.getElementById('tasksList');
+  if(tList){
+    const groupTasks = g ? state.tasks.filter(t=>t.groupId===g.id) : [];
+    const filtered = groupTasks.filter(t=> state.filter==='all' || t.status===state.filter);
+    tList.innerHTML = filtered.map(t=>{
+      const count = (t.completionLog||[]).length;
+      const isCreator = t.createdBy === profile.name;
+      const awaitingVerification = t.status === 'done';
+      const notClaimed = !t.claimedBy;
+      const claimedByMe = t.claimedBy === profile.name;
+      let actionHtml = '';
+      if(awaitingVerification && isCreator){
+        actionHtml = `<button class="btn" onclick="verifyTask('${t.id}')">✅ Verifizieren</button><button class="btn-outline" onclick="rejectTask('${t.id}')">↩️ Zurückweisen</button>`;
+      } else if(awaitingVerification){
+        actionHtml = `<span class="chip filled">⏳ Wartet auf ${t.createdBy}</span>`;
+      } else if(notClaimed){
+        actionHtml = `<button class="btn" onclick="claimTask('${t.id}')">🙋 Übernehmen</button>`;
+      } else if(claimedByMe){
+        actionHtml = `<button class="btn-outline" onclick="toggleTaskStatus('${t.id}')">${STATUS_LABELS[t.status]} →</button>`;
+      } else {
+        actionHtml = `<span class="chip filled">🙋 Übernommen von ${t.claimedBy}</span>`;
+      }
+      return `<div class="card">
+        <div class="row"><strong>${t.title}</strong><button class="icon-btn" onclick="deleteTask('${t.id}')">🗑️</button></div>
+        <div style="margin:8px 0;">
+          <span class="chip">${t.category}</span>
+          <span class="chip ${PRIORITY_COLORS[t.priority]}">${PRIORITY_LABELS[t.priority]}</span>
+          <span class="chip">+${t.xp} XP</span>
+          ${t.amount ? `<span class="chip">💶 ${t.amount.toFixed(2)} €</span>` : ''}
+          ${t.assignee?`<span class="chip">👤 Vorschlag: ${t.assignee}</span>`:'<span class="chip">👤 Egal wer</span>'}
+          <span class="chip">🛡️ Prüfer: ${t.createdBy}</span>
+          ${count > 0 ? `<span class="chip filled">🔁 ${count}x erledigt</span>` : ''}
+        </div>
+        <div class="row"><small>📅 ${t.dueDate}</small><div style="display:flex;gap:6px;flex-wrap:wrap;">${actionHtml}</div></div>
+      </div>`;
+    }).join('') || '<div class="empty">Keine Aufgaben in dieser Ansicht</div>';
+  }
+
+  const cal = document.getElementById('calendarWeek');
+  if(cal){
+    const groupTasks = g ? state.tasks.filter(t=>t.groupId===g.id) : [];
+    const today = new Date(); let html = '';
+    for(let i=0;i<7;i++){
+      const d = new Date(today); d.setDate(today.getDate()+i);
+      const iso = d.toISOString().slice(0,10);
+      const dayTasks = groupTasks.filter(t=>t.dueDate===iso);
+      html += `<div class="card"><strong>${d.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'})}</strong><br>
+        ${dayTasks.map(t=>`<span class="chip">${t.title}</span>`).join('') || '<small style="color:#888;">Keine Aufgaben</small>'}</div>`;
+    }
+    cal.innerHTML = html;
+  }
+
+  const pList = document.getElementById('pollsList');
+  if(pList){
+    const groupPolls = g ? state.polls.filter(p=>p.groupId===g.id) : [];
+    pList.innerHTML = groupPolls.map(p=>{
+      const total = p.options.reduce((s,o)=>s+o.voters.length,0);
+      return `<div class="card">
+        <div class="row"><strong>${p.question}</strong><small style="color:#888;">von ${p.createdBy}</small></div>
+        <div style="margin-top:10px;">
+        ${p.options.map((o,i)=>{
+          const pct = total ? Math.round(o.voters.length/total*100) : 0;
+          const iVoted = o.voters.includes(profile.name);
+          return `<div style="margin-bottom:8px;cursor:pointer;" onclick="vote('${p.id}',${i})">
+            <div class="row"><span>${o.text} ${iVoted?'✓':''}</span><span>${pct}% (${o.voters.length})</span></div>
+            <div class="progress"><div class="progress-bar" style="width:${pct}%;"></div></div>
+          </div>`;
+        }).join('')}
+        </div>
+      </div>`;
+    }).join('') || '<div class="empty">Noch keine Umfragen</div>';
+  }
+
+  const cList = document.getElementById('chatMessages');
+  if(cList){
+    const groupChat = g ? state.chat.filter(c=>c.groupId===g.id) : [];
+    cList.innerHTML = groupChat.map(m=>{
+      const mine = m.sender === profile.name;
+      return `<div class="chat-row ${mine?'mine':''}"><div class="chat-bubble ${mine?'chat-mine':'chat-theirs'}">
+        ${!mine?`<small style="opacity:.7;">${m.sender}</small><br>`:''}${m.text}</div></div>`;
+    }).join('') || '<div class="empty">Noch keine Nachrichten – schreib die erste!</div>';
+  }
+
+  const lList = document.getElementById('leaderboardList');
+  if(lList){
+    const groupMembers = g ? state.members.filter(m => g.members.includes(m.name)) : [];
+    const sorted = [...groupMembers].sort((a,b)=>(b.xp||0)-(a.xp||0));
+    const medals = ['🥇','🥈','🥉'];
+    lList.innerHTML = sorted.length ? sorted.map((m,i)=>{
+      const isMe = m.name === profile.name;
+      const visible = m.statsVisible !== false || isMe;
+      const level = Math.floor(Math.sqrt((m.xp||0)/50))+1;
+      return `<div class="card row"><div>${medals[i]||('#'+(i+1))} <strong>${m.name}</strong> ${visible?`· Level ${level}`:''}</div>
+        <div>${visible ? `${m.xp||0} XP · ${m.tasksDone||0} Aufgaben` : '🔒 Privat'}</div></div>`;
+    }).join('') : '<div class="empty">Noch keine Mitglieder mit Punkten</div>';
+  }
+
+  const metricTabs = document.getElementById('statMetricTabs');
+  const periodTabs = document.getElementById('statPeriodTabs');
+  if(metricTabs && periodTabs){
+    metricTabs.innerHTML = Object.keys(METRIC_LABELS).map(k=>`<div class="tab ${state.statMetric===k?'active':''}" onclick="setStatMetric('${k}')">${METRIC_LABELS[k]}</div>`).join('');
+    periodTabs.innerHTML = Object.keys(PERIOD_LABELS).map(k=>`<div class="tab ${state.statPeriod===k?'active':''}" onclick="setStatPeriod('${k}')">${PERIOD_LABELS[k]}</div>`).join('');
+
+    const myMember = getMyMember();
+    const myVisible = !myMember || myMember.statsVisible !== false;
+    const data = computeStatsData();
+    const pieEl = document.getElementById('pieChart');
+    const legendEl = document.getElementById('pieLegend');
+    if(pieEl && legendEl){
+      if(!myVisible){
+        pieEl.style.background = "var(--border)";
+        legendEl.innerHTML = '<div class="empty">🔒 Deine Statistiken sind auf privat gestellt (siehe Einstellungen)</div>';
+      } else {
+        const entries = Object.entries(data).map(([title, vals]) => ({ title, value: vals[state.statMetric] })).filter(e=>e.value>0).sort((a,b)=>b.value-a.value);
+        const total = entries.reduce((s,e)=>s+e.value, 0);
+        if(total === 0){
+          pieEl.style.background = "var(--border)";
+          legendEl.innerHTML = '<div class="empty">Noch keine Daten für diesen Zeitraum</div>';
+        } else {
+          let gradientParts = []; let cursor = 0;
+          entries.forEach((e,i)=>{
+            const pct = (e.value/total)*100;
+            const color = PIE_COLORS[i % PIE_COLORS.length];
+            gradientParts.push(`${color} ${cursor}% ${cursor+pct}%`);
+            cursor += pct;
+          });
+          pieEl.style.background = `conic-gradient(${gradientParts.join(', ')})`;
+          const unitSuffix = state.statMetric === 'amount' ? ' €' : (state.statMetric === 'xp' ? ' XP' : 'x');
+          legendEl.innerHTML = entries.map((e,i)=>{
+            const color = PIE_COLORS[i % PIE_COLORS.length];
+            const pct = Math.round((e.value/total)*100);
+            const displayVal = state.statMetric === 'amount' ? e.value.toFixed(2) : e.value;
+            return `<div class="row" style="padding:4px 0;">
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:8px;"></span>${e.title}</span>
+              <span>${displayVal}${unitSuffix} (${pct}%)</span></div>`;
+          }).join('');
+        }
+      }
+    }
+  }
+}
+
+document.addEventListener('click', (e)=>{
+  const pop = document.getElementById('profilePopover');
+  const trigger = document.querySelector('.profile-trigger');
+  if(pop && pop.classList.contains('open') && !pop.contains(e.target) && !trigger.contains(e.target)){
+    pop.classList.remove('open');
+  }
+  const nd = document.getElementById('notifDropdown');
+  const nb = document.getElementById('notifBtn');
+  if(nd && nd.style.display==='block' && !nd.contains(e.target) && e.target!==nb){
+    nd.style.display = 'none';
+  }
+});
+
+document.body.dataset.theme = state.theme;
+document.getElementById('themeBtn').textContent = state.theme==='dark' ? '☀️' : '🌙';
+updateAvatarDisplays();
+renderNotifications();
+if(!profile.name){ setTimeout(openProfileModal, 500); }
+showPage(state.activeGroupId ? 'groupHome' : 'dashboard');
+</script>
+</body>
+</html>
